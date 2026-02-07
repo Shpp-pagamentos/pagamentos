@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Pagamento Pix</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+    --vermelho:#fb5533;
+    --vermelho-escuro:#d73211;
+    --borda:#e5e5e5;
+}
+
+*{
+    box-sizing:border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+    margin:0;
+    background:#ffffff;
+    color:#333;
+}
+
+#splash{
+    position:fixed;
+    inset:0;
+    background:#ffffff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+#splash img{
+    width:120px;
+}
+
+.header{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:72px;
+    background:#ffffff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border-bottom:1px solid var(--borda);
+    z-index:1000;
+}
+.header img{
+    height:42px;
+}
+
+.container{
+    max-width:420px;
+    margin:100px auto 18px;
+    padding:16px;
+}
+
+.title{
+    font-size:16px;
+    margin-bottom:12px;
+}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+    padding:6px 0;
+}
+.row strong{
+    color:var(--vermelho);
+}
+
+.timer{
+    font-size:13px;
+    color:var(--vermelho);
+    margin:10px 0 16px;
+}
+
+.pix-box{
+    text-align:center;
+    border-top:1px solid var(--borda);
+    border-bottom:1px solid var(--borda);
+    padding:18px 0;
+}
+
+#qrcode{
+    display:flex;
+    justify-content:center;
+    margin:12px 0;
+}
+
+button{
+    width:100%;
+    padding:11px;
+    border-radius:4px;
+    border:1px solid var(--vermelho);
+    background:#fff;
+    color:var(--vermelho);
+    font-size:14px;
+    cursor:pointer;
+}
+button:hover{
+    background:var(--vermelho);
+    color:#fff;
+}
+
+button.primary{
+    background:var(--vermelho);
+    color:#fff;
+    border:none;
+    margin-top:12px;
+}
+
+button.primary:hover{
+    background:var(--vermelho-escuro);
+}
+
+button:disabled{
+    background:#eee;
+    color:#999;
+    border:1px solid #ddd;
+    cursor:not-allowed;
+}
+
+.instructions{
+    font-size:13px;
+    margin:16px 0;
+    padding-left:18px;
+}
+
+.instructions li{
+    margin-bottom:6px;
+}
+
+.expired{
+    text-align:center;
+    color:#d32f2f;
+    font-weight:bold;
+    margin-top:14px;
+    display:none;
+}
+
+.footer{
+    margin-top:18px;
+    text-align:center;
+    font-size:11px;
+    color:#777;
+}
+.footer strong{
+    color:#555;
+}
+</style>
+</head>
+
+<body>
+
+<div id="splash">
+    <img src="./logo1.jpeg" alt="Logo">
+</div>
+
+<div class="header">
+    <img src="./logo1.jpeg" alt="Logo">
+</div>
+
+<div class="container">
+
+<div class="title">Pagamento</div>
+
+<div class="row">
+    <span>Pagamento Total</span>
+    <strong>R$ 266,22</strong>
+</div>
+
+<div class="timer">
+    Pagar em até <strong><span id="tempo">10:00</span></strong>
+</div>
+
+<div class="pix-box">
+    <strong>Pix</strong>
+
+    <div id="qrcode"></div>
+
+    <!-- PIX INVISÍVEL MAS COPIÁVEL -->
+    <textarea id="codigo" readonly
+    style="
+        position:absolute;
+        opacity:0;
+        width:1px;
+        height:1px;
+        border:0;
+        padding:0;
+        resize:none;
+    ">
+00020101021226880014br.gov.bcb.pix2566qrcodes.saq.digital/v2/qr/cob/c235380a-f47b-4215-a1e5-0202abd65f8d5204000053039865802BR5925PJMOURA INTERMEDIACAO E A6009SAO PAULO62070503***630427EE</textarea>
+
+    <button id="copiar">Copiar código Pix</button>
+</div>
+
+<ul class="instructions">
+    <li>Acesse o aplicativo do seu banco.</li>
+    <li>Escolha pagar via Pix copia e cola.</li>
+    <li>Escaneie o QR Code ou cole o código.</li>
+    <li>Após pagar, retorne ao chat e envie o comprovante.</li>
+</ul>
+
+<button id="okBtn" class="primary">OK</button>
+
+<div id="expirado" class="expired">
+    Tempo expirado. Gere um novo pagamento.
+</div>
+
+<div class="footer">
+    <div><strong>CNPJ:</strong> 35.635.824/0001-12</div>
+    <div>Ambiente seguro • Pagamento protegido • Dados criptografados</div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    setTimeout(() => {
+        document.getElementById("splash").style.display = "none";
+    }, 2000);
+
+    gerarQRCode();
+
+    let tempo = 600;
+    const elTempo = document.getElementById("tempo");
+    const btnCopiar = document.getElementById("copiar");
+    const expirado = document.getElementById("expirado");
+
+    const intervalo = setInterval(() => {
+        const m = Math.floor(tempo / 60);
+        const s = tempo % 60;
+
+        elTempo.textContent =
+            String(m).padStart(2, "0") + ":" +
+            String(s).padStart(2, "0");
+
+        if (tempo <= 0) {
+            clearInterval(intervalo);
+            btnCopiar.disabled = true;
+            expirado.style.display = "block";
+        }
+        tempo--;
+    }, 1000);
+
+    // COPIAR PIX – COMPATÍVEL
+    btnCopiar.onclick = () => {
+        const textarea = document.getElementById("codigo");
+
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        let copiou = false;
+
+        try {
+            copiou = document.execCommand("copy");
+        } catch (e) {
+            copiou = false;
+        }
+
+        btnCopiar.textContent = copiou
+            ? "Código copiado"
+            : "Segure para copiar";
+
+        setTimeout(() => {
+            btnCopiar.textContent = "Copiar código Pix";
+        }, 2000);
+    };
+
+    document.getElementById("okBtn").onclick = () => {
+        window.location.href = "https://wa.me/";
+    };
+});
+
+function gerarQRCode() {
+    const codigoPix = document.getElementById("codigo").value.trim();
+    const qrDiv = document.getElementById("qrcode");
+    qrDiv.innerHTML = "";
+
+    new QRCode(qrDiv, {
+        text: codigoPix,
+        width: 220,
+        height: 220,
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+</script>
+
+</body>
+</html>
